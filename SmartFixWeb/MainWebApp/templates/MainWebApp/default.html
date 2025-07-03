@@ -1,34 +1,48 @@
+{% load static tailwind_tags %}
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Default Template</title>
-</head>
-<body>
-    <div id="chat">
-        <div id="messages"></div>
-        <input type="text" id="messageInput" placeholder="Tapez votre message ici...">
-        <button onclick="sendMessage()">Envoyer</button>
-    </div>
-
-    <script>
-        function sendMessage() {
-            const message = document.getElementById('messageInput').value;
-            fetch('/chat/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: `message=${encodeURIComponent(message)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                const messagesDiv = document.getElementById('messages');
-                messagesDiv.innerHTML += `<p>Vous: ${message}</p><p>Chatbot: ${data.message}</p>`;
-                document.getElementById('messageInput').value = ''; // Efface le champ de saisie après l'envoi
-            })
-            .catch(error => console.error('Erreur:', error));
-        }
-    </script>
-</body>
+    <head>
+        <title>Chat Template</title>
+        {% tailwind_css %}
+    </head>
+    <body class="bg-gray-100 min-h-screen p-4">
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-gray-800 mb-6">Chat</h1>
+                
+                <!-- Zone des messages -->
+                <div id="messages" class="border border-gray-300 rounded-lg p-4 mb-6 h-96 overflow-y-auto bg-gray-50">
+                    {% for message in messages %}
+                        <div class="mb-4">
+                            <p class="text-blue-600 font-semibold">Vous: {{ message.user_message }}</p>
+                            {% if message.bot_response %}
+                                <p class="text-gray-800 mt-2">Chatbot: {{ message.bot_response }}</p>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="text-gray-500 text-center">Aucun message pour le moment. Commencez la conversation !</p>
+                    {% endfor %}
+                </div>
+                
+                <!-- Formulaire de chat -->
+                <form method="POST" action="" class="flex gap-2">
+                    {% csrf_token %}
+                    <input 
+                        type="text" 
+                        name="message" 
+                        placeholder="Tapez votre message ici..." 
+                        required
+                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value="{{ request.POST.message|default:'' }}"
+                    >
+                    <button 
+                        type="submit"
+                        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200"
+                    >
+                        Envoyer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </body>
 </html>
