@@ -1,19 +1,60 @@
 {% load static tailwind_tags %}
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		<title>Django Tailwind</title>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta http-equiv="X-UA-Compatible" content="ie=edge">
-		{% tailwind_css %}
-	</head>
+<html>
+    <head>
+        <title>{% block title %}SmartFix{% endblock %}</title>
+        {% tailwind_css %}
+    </head>
+    <body class="bg-gray-100 min-h-screen">
+        <!-- Barre de menu horizontale -->
+        <nav class="bg-white shadow-md border-b border-gray-200">
+            <div class="px-6 py-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-bold text-gray-800">SmartFix</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="{% url 'default' %}" class="text-gray-600 hover:text-gray-800">Accueil</a>
+                        <a href="#" class="text-gray-600 hover:text-gray-800">Paramètres</a>
+                        <a href="#" class="text-gray-600 hover:text-gray-800">Profil</a>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            Déconnexion
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
 
-	<body class="bg-gray-50 font-serif leading-normal tracking-normal">
-		<div class="container mx-auto">
-			<section class="flex items-center justify-center h-screen">
-				<h1 class="text-5xl">Django + Tailwind = ❤️</h1>
-			</section>
-		</div>
-	</body>
+        <div class="flex">
+            <!-- Barre de menu à gauche -->
+            <aside class="w-64 bg-white shadow-md min-h-screen">
+                <div class="p-4">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">Menu</h2>
+                    <nav class="space-y-2">
+                        <a href="{% url 'default' %}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+                            Dashboard
+                        </a>
+                        <a href="{% url 'chat' %}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+                            Chat
+                        </a>
+                        <a href="#" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+                            Rapports
+                        </a>
+                        <a href="#" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+                            Clients
+                        </a>
+                        <a href="#" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+                            Paramètres
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Zone de contenu principal -->
+            <main class="flex-1 p-6">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </body>
 </html>

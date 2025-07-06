@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat - SmartFix{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md">
+    <div class="p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Chat Assistant</h1>
+        
+        <!-- Zone des messages -->
+        <div id="messages" class="border border-gray-300 rounded-lg p-4 mb-6 h-96 overflow-y-auto bg-gray-50">
+            {% for message in messages %}
+                <div class="mb-4 p-3 bg-white rounded-lg shadow-sm">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span class="text-white text-sm font-semibold">U</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-blue-600 font-semibold text-sm">Vous</p>
+                            <p class="text-gray-800 mt-1">{{ message.user_message }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if message.bot_response %}
+                        <div class="flex items-start space-x-3 mt-3 ml-4">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-semibold">B</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-green-600 font-semibold text-sm">Assistant</p>
+                                <p class="text-gray-800 mt-1">{{ message.bot_response }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <span class="text-gray-400 text-2xl">💬</span>
+                    </div>
+                    <p class="text-gray-500">Aucun message pour le moment.</p>
+                    <p class="text-gray-400 text-sm">Commencez la conversation ci-dessous !</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Formulaire de chat -->
+        <form method="POST" action="{% url 'chat' %}" class="bg-gray-50 p-4 rounded-lg">
+            {% csrf_token %}
+            <div class="flex gap-3">
+                <input
+                    type="text"
+                    name="message"
+                    placeholder="Tapez votre message ici..."
+                    required
+                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value="{{ request.POST.message|default:'' }}"
+                >
+                <button
+                    type="submit"
+                    class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 font-medium"
+                >
+                    Envoyer
+                </button>
+            </div>
+        </form>
+        
+        <!-- Statistiques du chat -->
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <h3 class="text-sm font-semibold text-blue-800">Messages envoyés</h3>
+                <p class="text-2xl font-bold text-blue-600">{{ messages|length }}</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg">
+                <h3 class="text-sm font-semibold text-green-800">Réponses reçues</h3>
+                <p class="text-2xl font-bold text-green-600">
+                    {% for message in messages %}
+                        {% if message.bot_response %}{{ forloop.counter }}{% endif %}
+                    {% empty %}0{% endfor %}
+                </p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg">
+                <h3 class="text-sm font-semibold text-purple-800">Session active</h3>
+                <p class="text-2xl font-bold text-purple-600">
+                    {% if messages %}Oui{% else %}Non{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

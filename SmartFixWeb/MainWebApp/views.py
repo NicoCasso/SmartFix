@@ -3,7 +3,10 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 
 def default_view(request):
-    return render(request, 'MainWebApp/default.html')
+    # Récupérer les messages pour les statistiques
+    messages = request.session.get('messages', [])
+    context = {'messages': messages}
+    return render(request, 'MainWebApp/default.html', context)
 
 def chat_request(request):
     # Récupérer ou créer l'historique des messages (vous pouvez utiliser la session)
@@ -29,7 +32,7 @@ def chat_request(request):
     context = {
         'messages': request.session.get('messages', [])
     }
-    return render(request, 'MainWebApp/default.html', context)
+    return render(request, 'MainWebApp/chat_page.html', context)
 
 def process_message(message):
     # Votre logique de chatbot ici
