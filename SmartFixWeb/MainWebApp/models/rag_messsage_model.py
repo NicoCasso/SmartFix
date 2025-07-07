@@ -7,6 +7,7 @@ class SfRagMessage(models.Model) :
     message_text = models.TextField(default="message")
     staff = models.ForeignKey(SfSupportAgent, null=True, on_delete=models.SET_NULL)
     ticket = models.ForeignKey(SfTicket, null=True, on_delete=models.SET_NULL)
+    date_message = models.DateTimeField(auto_now_add=True)
     def __str__(self) : 
         return self.message_text
     
