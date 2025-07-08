@@ -81,8 +81,12 @@
         </div>
         
         <!-- Formulaire de chat -->
-        <form method="POST" action="{% url 'chat' %}" class="bg-gray-50 p-4 rounded-lg">
+        <form id="messageForm" method="POST" action="{% url 'chat' %}" class="bg-gray-50 p-4 rounded-lg">
             {% csrf_token %}
+
+            <!-- Champ caché pour stocker le ticket courant -->
+            <input type="hidden" id="embedded_ticket_id" value = "{{selected_ticket.id}}" />
+
             <div class="flex gap-3">
                 <input
                     type="text"
@@ -126,8 +130,15 @@
 </div>
 
 <script>
+    // submit systematique du formulaire sur l'évenement onChange
     document.getElementById('ticketSelect').addEventListener('change', function() {
         document.getElementById('ticketForm').submit();
+    });
+
+    // mise à jour systématique du champ avant submit du second formulaire
+    document.getElementById('messageForm').addEventListener('submit', function() {
+        let selected_ticket_id = document.getElementById('ticketSelect').value;
+        document.getElementById('embedded_ticket_id').value = selected_ticket_id;
     });
 </script>
 

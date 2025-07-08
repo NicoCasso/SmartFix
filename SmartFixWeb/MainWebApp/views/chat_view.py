@@ -9,23 +9,23 @@ from ..LLM.llama_constant import LLamaConstant
 def show_chat_view(request):
     sf_tickets = SfTicket.objects.all()
     sf_tickets = list(sf_tickets)
-    selected_ticket = None
 
-    selected_ticket_id = request.session.get('selected_ticket_id')
+    selected_ticket_id = request.session.get('new_ticket_id')
     if request.method == 'POST':
-        selected_ticket_id = request.POST.get('ticket')
+        if not selected_ticket_id : # cas d'un post "changement de ticket" 
+            selected_ticket_id = request.POST.get('ticket')
         
-    if selected_ticket_id:
-        selected_ticket = SfTicket.objects.get(id=selected_ticket_id)
-
-    if not selected_ticket :
+        if not selected_ticket_id : # cas d'un post "nouveau message" 
+            selected_ticket_id = request.POST.get('embedded_ticket_id')
+        
+    if not selected_ticket_id :# default
         selected_ticket_id = 1 # 2 is the id of first user for instance ( 2 would be better)
-        selected_ticket = SfTicket.objects.get(id=selected_ticket_id)
 
-    user_staff_id = selected_ticket.staff_id
+    current_ticket = SfTicket.objects.get(id=selected_ticket_id)
+    user_staff_id = current_ticket.staff_id
     assistant_id = 2 # 2 is the id of the bot, for instance ( 1 would be better)
     
-    sf_rag_messages = SfRagMessage.objects.filter(ticket_id=selected_ticket_id).order_by('date_message')
+    sf_rag_messages = SfRagMessage.objects.filter(ticket_id=current_ticket.id).order_by('date_message')
     sf_rag_messages = list(sf_rag_messages)
 
     rag_messages_for_view = []
@@ -55,9 +55,11 @@ def show_chat_view(request):
             new_question = SfRagMessage.objects.create(
                 message_text = user_message,
                 staff_id = user_staff_id, 
-                ticket_id = 1  
+                ticket_id = current_ticket.id
             )
-
+            new_question.is_from_user = True   
+            rag_messages_for_view.append(new_question)
+      
             chat_bot = SfChatBot()
             chat_bot.set_history(user_bot_history)
 
@@ -76,12 +78,15 @@ def show_chat_view(request):
                 new_answer = SfRagMessage.objects.create(
                     message_text = bot_message,
                     staff_id = assistant_id, 
-                    ticket_id= selected_ticket_id  
+                    ticket_id= current_ticket.id  
                 )
+                new_answer.is_from_user = False   
+                rag_messages_for_view.append(new_answer)
+                
                 
     context = {
         'tickets' : sf_tickets,
-        'selected_ticket' : selected_ticket,
+        'selected_ticket' : current_ticket,
         'rag_messages': rag_messages_for_view
     }
     return render(request, 'MainWebApp/chat_page.html', context)
@@ -106,7 +111,7 @@ def new_ticket(request):
         client = previous_ticket.client,
         workflow = None
     )   
-    request.session['selected_ticket_id']  = new_ticket.id
+    request.session['new_ticket_id']  = new_ticket.id
     return redirect('chat')
 
     return render(request, 'MainWebApp/chat_page.html')
