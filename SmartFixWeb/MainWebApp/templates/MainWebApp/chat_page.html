@@ -11,7 +11,7 @@
             <div class="flex flex-col items-start bg-white p-4 rounded-lg shadow">
                 <label for="ticketSelect" class="text-lg font-medium text-gray-700 mb-2">Ticket :</label>
                 <div class="flex flex-col space-y-4 w-full">
-                    <select id="ticketSelect" name="ticket" 
+                    <select id="ticketSelect" name="ticket_name" 
                         class="border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
                         <option value="" selected disabled>Sélectionnez un ticket</option>
                         {% for ticket in tickets %}
@@ -85,7 +85,11 @@
             {% csrf_token %}
 
             <!-- Champ caché pour stocker le ticket courant -->
-            <input type="hidden" id="embedded_ticket_id" value = "{{selected_ticket.id}}" />
+            {% if selected_ticket %}
+                <input type="hidden" id="embedded_ticket_id" name="embedded_ticket_name" value = "{{ selected_ticket.id }}" />
+            {% else %}                
+                <input type="hidden" id="embedded_ticket_id" name="embedded_ticket_name" value = "" />
+            {% endif %}
 
             <div class="flex gap-3">
                 <input

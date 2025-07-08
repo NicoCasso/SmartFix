@@ -13,10 +13,10 @@ def show_chat_view(request):
     selected_ticket_id = request.session.get('new_ticket_id')
     if request.method == 'POST':
         if not selected_ticket_id : # cas d'un post "changement de ticket" 
-            selected_ticket_id = request.POST.get('ticket')
+            selected_ticket_id = request.POST.get('ticket_name')
         
         if not selected_ticket_id : # cas d'un post "nouveau message" 
-            selected_ticket_id = request.POST.get('embedded_ticket_id')
+            selected_ticket_id = request.POST.get('embedded_ticket_name')
         
     if not selected_ticket_id :# default
         selected_ticket_id = 1 # 2 is the id of first user for instance ( 2 would be better)
