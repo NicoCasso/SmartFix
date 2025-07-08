@@ -19,7 +19,7 @@
                                 {% if selected_ticket and selected_ticket.id == ticket.id %}
                                     selected
                                 {% endif %}>
-                                {{ ticket.titre }}
+                                {{ ticket.title }}
                             </option>
                         {% endfor %}
                     </select>
@@ -33,38 +33,19 @@
         </form>
 
         <!-- Zone des messages -->
-        {% comment %} <div id="messages" class="border border-gray-300 rounded-lg p-4 mb-6 h-96 overflow-y-auto bg-gray-50"> {% endcomment %}
         <div class="chat-container h-96 overflow-y-auto mb-4">
             {% for rag_message in rag_messages %}
                 <div class="mb-4 p-3 bg-white rounded-lg shadow-sm">
-                    {% comment %} <div class="flex items-start space-x-3">
-                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span class="text-white text-sm font-semibold">U</span>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-blue-600 font-semibold text-sm">Vous</p>
-                            <p class="text-gray-800 mt-1">{{ message.user_message }}</p>
-                        </div>
-                    </div> {% endcomment %}
                     {% if rag_message.is_from_user %}
                         <div class="chat-message">
                             <div class="chat-bubble user-bubble">
-                                {{ rag_message.message_text }}
+                                {{ rag_message.text }}
                             </div>
                         </div>
                     {% else %}
-                        {% comment %} <div class="flex items-start space-x-3 mt-3 ml-4">
-                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                <span class="text-white text-sm font-semibold">B</span>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-green-600 font-semibold text-sm">Assistant</p>
-                                <p class="text-gray-800 mt-1">{{ message.bot_response }}</p>
-                            </div>
-                        </div> {% endcomment %}
                          <div class="chat-message">
                             <div class="chat-bubble bot-bubble">
-                                {{ rag_message.message_text }}
+                                {{ rag_message.text }}
                             </div>
                         </div>
                     {% endif %}

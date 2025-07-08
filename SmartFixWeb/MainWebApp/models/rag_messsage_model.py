@@ -4,12 +4,12 @@ from .ticket_model import SfTicket
 
 
 class SfRagMessage(models.Model) :
-    message_text = models.TextField(default="message")
-    staff = models.ForeignKey(SfSupportAgent, null=True, on_delete=models.SET_NULL)
+    text = models.TextField(default="message")
+    author = models.ForeignKey(SfSupportAgent, null=True, on_delete=models.SET_NULL)
     ticket = models.ForeignKey(SfTicket, null=True, on_delete=models.SET_NULL)
-    date_message = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
     def __str__(self) : 
-        return self.message_text
+        return self.text
     
     class Meta:
         db_table = 'sfix_rag_message'

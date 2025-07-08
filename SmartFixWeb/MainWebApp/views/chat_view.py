@@ -1,10 +1,8 @@
 import requests
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
-
 from ..models.rag_messsage_model import SfRagMessage, SfTicket
-from ..LLM.chat_bot import SfChatBot
-from ..LLM.llama_constant import LLamaConstant
+from LLMApp.OllamaCore import SfChatBot, LLamaConstant
 
 def show_chat_view(request):
     sf_tickets = SfTicket.objects.all()
@@ -25,17 +23,17 @@ def show_chat_view(request):
     user_staff_id = current_ticket.staff_id
     assistant_id = 2 # 2 is the id of the bot, for instance ( 1 would be better)
     
-    sf_rag_messages = SfRagMessage.objects.filter(ticket_id=current_ticket.id).order_by('date_message')
+    sf_rag_messages = SfRagMessage.objects.filter(ticket_id=current_ticket.id).order_by('created')
     sf_rag_messages = list(sf_rag_messages)
 
     rag_messages_for_view = []
     user_bot_history = []
     for rag_message in sf_rag_messages :
 
-        if rag_message.staff_id == user_staff_id :
+        if rag_message.author_id == user_staff_id :
             history_user = LLamaConstant.USER.value
             rag_message.is_from_user = True
-        elif rag_message.staff_id == assistant_id :
+        elif rag_message.author_id == assistant_id :
             history_user = LLamaConstant.ASSISTANT.value
             rag_message.is_from_user = False
         else :
@@ -44,7 +42,7 @@ def show_chat_view(request):
         rag_messages_for_view.append(rag_message)     
         user_bot_history.append({
             LLamaConstant.ROLE.value: history_user, 
-            LLamaConstant.CONTENT.value: rag_message.message_text
+            LLamaConstant.CONTENT.value: rag_message.text
         })
                   
     if request.method == 'POST':
@@ -53,8 +51,8 @@ def show_chat_view(request):
 
             # Enregistrer dans la BDD
             new_question = SfRagMessage.objects.create(
-                message_text = user_message,
-                staff_id = user_staff_id, 
+                text = user_message,
+                author_id = user_staff_id, 
                 ticket_id = current_ticket.id
             )
             new_question.is_from_user = True   
@@ -76,8 +74,8 @@ def show_chat_view(request):
             if bot_message :
                 # Enregistrer dans la BDD
                 new_answer = SfRagMessage.objects.create(
-                    message_text = bot_message,
-                    staff_id = assistant_id, 
+                    text = bot_message,
+                    author_id = assistant_id, 
                     ticket_id= current_ticket.id  
                 )
                 new_answer.is_from_user = False   
@@ -102,11 +100,11 @@ def new_ticket(request):
         previous_ticket = SfTicket.objects.get(id=previous_ticket_id)
        
     number = SfTicket.objects.count() +1
-    title = f"ticket n°{number}"
+    title_text = f"ticket n°{number}"
 
     new_ticket = SfTicket.objects.create(
-        titre = title,
-        description = title,
+        title = title_text ,
+        description = title_text,
         staff = previous_ticket.staff,
         client = previous_ticket.client,
         workflow = None
