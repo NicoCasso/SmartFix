@@ -1,2 +1,4 @@
-.venv/
+.venv_web/
+.venv_api/
 __pycache__
+DATA/

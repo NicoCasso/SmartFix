@@ -1,4 +1,5 @@
 from pathlib import Path, PosixPath
+
 def delete_pycache_rec(target_directory : PosixPath) :
     for pycache_dir in target_directory.rglob('__pycache__'):
         try:

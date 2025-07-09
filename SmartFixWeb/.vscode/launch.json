@@ -5,7 +5,7 @@
             "name": "Django",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/SmartFixWeb/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "runserver",
                 "--noreload"
