@@ -1,9 +1,13 @@
 from pydantic import BaseModel, Field
 
-class ChatBotRequest(BaseModel):
-    history : list[dict]
+class HistoryItemData(BaseModel):
+    role : str
+    content: str
+
+class ChatBotRequestData(BaseModel):
+    history : list[HistoryItemData]
     question : str
 
-class ChatBotResponse(BaseModel):
+class ChatBotResponseData(BaseModel):
     answer : str
 

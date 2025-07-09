@@ -1,5 +1,6 @@
 import json
 import requests
+from .llama_strings import LLamaStrings as llst
 
 class SfChatBot():
     def __init__(self) :
@@ -42,7 +43,10 @@ class SfChatBot():
             raise exception
 
     def execute(self, user_message:str) :    
-        self.history.append({"role": "user", "content": user_message})
+        self.history.append({
+            llst.KEY.ROLE: llst.ROLEVALUE.USER, 
+            llst.KEY.CONTENT: user_message})
+        
         messages_to_send = self.history
     
         assistant_response = self._invoke(messages_to_send)

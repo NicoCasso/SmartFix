@@ -1,2 +1,3 @@
 from .chat_bot import SfChatBot
-from .llama_constant import LLamaConstant
+from .api_chat_bot import SfApiChatBot
+from .llama_strings import LLamaStrings

@@ -1,8 +1,12 @@
 import requests
+
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
+
 from ..models.rag_messsage_model import SfRagMessage, SfTicket
-from LLMApp.OllamaCore import SfChatBot, LLamaConstant
+from LLMApp.OllamaCore import LLamaStrings as llst
+from LLMApp.OllamaCore import SfChatBot, SfApiChatBot 
+
 
 def show_chat_view(request):
     sf_tickets = SfTicket.objects.all()
@@ -31,18 +35,20 @@ def show_chat_view(request):
     for rag_message in sf_rag_messages :
 
         if rag_message.author_id == user_staff_id :
-            history_user = LLamaConstant.USER.value
+            history_user = llst.ROLEVALUE.USER
             rag_message.is_from_user = True
+
         elif rag_message.author_id == assistant_id :
-            history_user = LLamaConstant.ASSISTANT.value
+            history_user = llst.ROLEVALUE.ASSISTANT
             rag_message.is_from_user = False
+
         else :
             raise Exception("En cours de développement")
         
         rag_messages_for_view.append(rag_message)     
         user_bot_history.append({
-            LLamaConstant.ROLE.value: history_user, 
-            LLamaConstant.CONTENT.value: rag_message.text
+            llst.KEY.ROLE: history_user, 
+            llst.KEY.CONTENT: rag_message.text
         })
                   
     if request.method == 'POST':
@@ -58,15 +64,19 @@ def show_chat_view(request):
             new_question.is_from_user = True   
             rag_messages_for_view.append(new_question)
       
-            chat_bot = SfChatBot()
-            chat_bot.set_history(user_bot_history)
+            # chat_bot = SfChatBot()
+            # chat_bot.set_history(user_bot_history)
+            api_chat_bot = SfApiChatBot()
 
             bot_message = None
             try :
                 # Obtenir la réponse du chatbot 
-                bot_response = chat_bot.execute(user_message)
-                bot_role = bot_response[LLamaConstant.ROLE.value]
-                bot_message = bot_response[LLamaConstant.CONTENT.value]
+                #bot_response = chat_bot.execute(user_message)
+                # bot_role = bot_response[llst.KEY.ROLE]
+                # bot_message = bot_response[llst.KEY.CONTENT]
+
+                bot_message = api_chat_bot.call(user_bot_history, user_message)              
+                bot_role = llst.ROLEVALUE.ASSISTANT
 
             except Exception as exc:
                 raise exc
