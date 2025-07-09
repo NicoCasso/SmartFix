@@ -7,8 +7,12 @@ sf_chat_bot = SfChatBot()
 
 @router.post("/ask", response_model = ChatBotResponseData) 
 def ask_chatbot(request: ChatBotRequestData) -> ChatBotResponseData:
-    sf_chat_bot.set_history(request.history)
-    answer_text = sf_chat_bot.execute(request.question)
+    history_casted = [{"role" :item.role, "content" : item.content} for item in request.history]
+    sf_chat_bot.set_history(history_casted)
+
+    answer_dict = sf_chat_bot.execute(request.question)
+    answer_role = answer_dict["role"]
+    answer_text = answer_dict["content"]
 
     response = ChatBotResponseData(answer=answer_text)
 

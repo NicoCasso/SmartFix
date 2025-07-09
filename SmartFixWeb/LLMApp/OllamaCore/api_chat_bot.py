@@ -16,7 +16,12 @@ class SfApiChatBot():
         request_data["history"] = history
         request_data["question"] = user_message
 
-        response_data = requests.post(self.api_url, json= request_data)
+        response = requests.post(self.api_url, json= request_data)
 
-        answer_text = response_data["answer"]
+        if response.status_code == 200 :
+            response_data = response.json()
+            answer_text = response_data["answer"]
+        else : 
+            answer_text = f"HTTP error {response.status_code}"
+        
         return answer_text
