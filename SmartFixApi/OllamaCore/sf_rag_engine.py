@@ -1,14 +1,25 @@
 import os
 import sys
+from typing import TypedDict, List
 from pathlib import Path
 import httpx
 
 import chromadb
 from chromadb.utils import embedding_functions
-# from langchain_community.embeddings import OllamaEmbeddings
-# from langchain_community.vectorstores import Chroma
-#from OllamaCore.sf_custom_ollama_embedding_function import SfCustomOllamaEmbeddingFunction
 from PyPDF2 import PdfReader
+
+
+from langgraph.graph import StateGraph, END
+from langchain_community.embeddings import OllamaEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.chat_models import ChatOllama
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+class RAGState(TypedDict):
+    question: str
+    context: List[str]
+    answer: str
 
 os.environ["CHROMA_ENABLE_TELEMETRY"] = "false"
 
@@ -114,55 +125,197 @@ class SfRagEngine :
         # print(f"{len(chunks)} chunks ont été créés.")
         return chunks
     
-    def initialize_langchain(self):
-        pass
-
-        # print("Initialisation des composants LangChain...")
-
-        # # Initialise le client Ollama pour les embeddings
-        # ollama_embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
-
-        # # Initialise le client ChromaDB pour se connecter à la base de données existante.
-        # # Le chemin doit correspondre à l'endroit où la DB a été créée par module5_creation_db.py
-        # # (qui est dans le même dossier 'code')
-        # vectorstore = Chroma(
-        #     client=chromadb.PersistentClient(path="./chroma_db"),
-        #     collection_name=COLLECTION_NAME,
-        #     embedding_function=ollama_embeddings
-        # )
-
-        # # Crée un retriever à partir du vectorstore.
-        # # Le retriever est responsable de la recherche des documents pertinents.
-        # retriever = vectorstore.as_retriever(search_kwargs={"k": 3}) # Récupère les 3 chunks les plus pertinents
-
-        # # Initialise le modèle de chat Ollama
-        # llm = ChatOllama(model=LLM_MODEL)
-
-        # # --- 3. Définition du prompt RAG ---
-
-        # # Le template du prompt pour le LLM.
-        # # Il inclut le contexte récupéré et la question de l'utilisateur.
-        # template = """Réponds à la question en te basant uniquement sur le contexte suivant:
-        # {context}
-
-        # Question: {question}
-        # """
-        # prompt = ChatPromptTemplate.from_template(template)
-
-        # # --- 4. Construction de la chaîne RAG avec LangChain Expression Language (LCEL) ---
-
-        # # La chaîne RAG est construite en utilisant LCEL pour une meilleure lisibilité et modularité.
-        # rag_chain = (
-        #     {"context": retriever, "question": RunnablePassthrough()} # Étape de recherche (Retrieval)
-        #     | prompt                                                  # Étape d'augmentation (Augmented)
-        #     | llm                                                     # Étape de génération (Generation)
-        #     | StrOutputParser()                                       # Parse la sortie du LLM en chaîne de caractères
-        # )
-
-
+    def retrieve_documents(self, state: RAGState) -> RAGState:
+        """Nœud pour récupérer les documents pertinents"""
+        print(f"Recherche de documents pour: {state['question']}")
+        docs = self.retriever.get_relevant_documents(state["question"])
+        context = [doc.page_content for doc in docs]
+        return {
+            **state,
+            "context": context
+        }
     
-    def get_response(self):
-        pass
+    def generate_answer(self, state: RAGState) -> RAGState:
+        """Nœud pour générer la réponse"""
+        print("Génération de la réponse...")
+        # Prépare le prompt avec le contexte et la question
+        formatted_prompt = self.prompt.format_messages(
+            context="\n\n".join(state["context"]),
+            question=state["question"]
+        )
+        
+        # Génère la réponse
+        response = self.llm.invoke(formatted_prompt)
+        answer = self.output_parser.invoke(response)
+        
+        return {
+            **state,
+            "answer": answer
+        }
+    
+    def initialize_langgraph(self):
+        print("Initialisation des composants LangGraph...")
+        
+        # Initialise le client Ollama pour les embeddings
+        ollama_embeddings = OllamaEmbeddings(model=self.embedding_model)
+        
+        # Initialise le client ChromaDB pour se connecter à la base de données existante
+        vectorstore = Chroma(
+            client=chromadb.PersistentClient(path="./chroma_db"),
+            collection_name=self.collection_name,
+            embedding_function=ollama_embeddings
+        )
+        
+        # Crée un retriever à partir du vectorstore
+        self.retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+        
+        # Initialise le modèle de chat Ollama
+        self.llm = ChatOllama(model=self.llm_model)
+        
+        # Template du prompt pour le LLM
+        template = """Réponds à la question en te basant uniquement sur le contexte suivant:
+    {context}
 
-   
+    Question: {question}
+    """
+        self.prompt = ChatPromptTemplate.from_template(template)
+        
+        # Parser pour la sortie
+        self.output_parser = StrOutputParser()
+        
+        # --- Définition des nœuds du graphe ---
+    
+    
+    
+        # --- Construction du graphe ---
+        workflow = StateGraph(RAGState)
+        
+        # Ajout des nœuds
+        workflow.add_node("retrieve", self.retrieve_documents)
+        workflow.add_node("generate", self.generate_answer)
+        
+        # Définition du flux
+        workflow.set_entry_point("retrieve")
+        workflow.add_edge("retrieve", "generate")
+        workflow.add_edge("generate", END)
+        
+        # Compilation du graphe
+        rag_graph = workflow.compile()
+        
+        # Stockage du graphe pour utilisation ultérieure
+        self.rag_graph = rag_graph
+        
+        print("Graphe RAG initialisé avec succès!")
+        
+        return rag_graph
 
+    def query_rag(self, question: str) -> str:
+        """Méthode pour interroger le système RAG avec LangGraph"""
+        if not hasattr(self, 'rag_graph'):
+            raise ValueError("Le graphe RAG n'est pas initialisé. Appelez initialize_langgraph() d'abord.")
+        
+        # État initial
+        initial_state = {
+            "question": question,
+            "context": [],
+            "answer": ""
+        }
+        
+        # Exécution du graphe
+        result = self.rag_graph.invoke(initial_state)
+        
+        return result["answer"]
+    
+    #region advanced
+    
+    def check_context_quality_adv(self, state: RAGState) -> str:
+        """Vérifie si le contexte est suffisant"""
+        if not state.get("has_context", False):
+            return "no_context"
+        if len(state["context"]) < 2:
+            return "weak_context"
+        return "good_context"
+    
+    def retrieve_documents_adv(self, state: RAGState) -> RAGState:
+        """Récupération avec validation"""
+        docs = self.retriever.get_relevant_documents(state["question"])
+        context = [doc.page_content for doc in docs]
+        
+        return {
+            **state,
+            "context": context,
+            "has_context": len(context) > 0
+        }
+    
+    def generate_answer_adv(self, state: RAGState) -> RAGState:
+        """Génération normale"""
+        formatted_prompt = self.prompt.format_messages(
+            context="\n\n".join(state["context"]),
+            question=state["question"]
+        )
+        response = self.llm.invoke(formatted_prompt)
+        answer = self.output_parser.invoke(response)
+        
+        return {**state, "answer": answer}
+    
+    def generate_fallback_answer_adv(self, state: RAGState) -> RAGState:
+        """Génération de secours sans contexte suffisant"""
+        fallback_prompt = ChatPromptTemplate.from_template(
+            "Je n'ai pas trouvé suffisamment d'informations pertinentes pour répondre à cette question: {question}. "
+            "Pouvez-vous reformuler votre question ou être plus spécifique?"
+        )
+        
+        formatted_prompt = fallback_prompt.format_messages(question=state["question"])
+        response = self.llm.invoke(formatted_prompt)
+        answer = self.output_parser.invoke(response)
+        
+        return {**state, "answer": answer}
+        
+
+    # Exemple d'utilisation avancée avec conditions
+    def initialize_advanced_langgraph(self):
+        """Version avancée avec gestion d'erreurs et conditions"""
+        print("Initialisation du graphe RAG avancé...")
+        
+        # ... (même initialisation que ci-dessus)
+        ollama_embeddings = OllamaEmbeddings(model=self.embedding_model)
+        vectorstore = Chroma(
+            client=chromadb.PersistentClient(path="./chroma_db"),
+            collection_name=self.collection_name,
+            embedding_function=ollama_embeddings
+        )
+        self.retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+        self.llm = ChatOllama(model=self.llm_model)
+        self.prompt = ChatPromptTemplate.from_template("""Réponds à la question en te basant uniquement sur le contexte suivant:
+    {context}
+
+    Question: {question}
+    """)
+        self.output_parser = StrOutputParser()
+        
+        # Construction du graphe avancé
+        workflow = StateGraph(RAGState)
+        
+        workflow.add_node("retrieve", self.retrieve_documents_adv)
+        workflow.add_node("generate", self.generate_answer_adv)
+        workflow.add_node("fallback", self.generate_fallback_answer_adv)
+        
+        workflow.set_entry_point("retrieve")
+        workflow.add_conditional_edges(
+            "retrieve",
+            self.check_context_quality_adv,
+            {
+                "good_context": "generate",
+                "weak_context": "generate",
+                "no_context": "fallback"
+            }
+        )
+        workflow.add_edge("generate", END)
+        workflow.add_edge("fallback", END)
+        
+        self.rag_graph = workflow.compile()
+        
+        print("Graphe RAG avancé initialisé!")
+        return self.rag_graph
+    
+    #endregion

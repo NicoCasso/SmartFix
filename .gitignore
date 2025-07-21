@@ -2,7 +2,8 @@
 .venv_api/
 .venv_wkf/
 __pycache__
-DATA/
+DATA/db.sqlite3
+
 Workflows_init/08_rag_simple.py
 Workflows_init/10_rag_langchain.py
 Workflows_init/Conventional.pdf

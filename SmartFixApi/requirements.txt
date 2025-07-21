@@ -8,3 +8,18 @@ chromadb
 PyPDF2
 httpx
 ollama
+
+langgraph
+langchain-core
+langchain-community
+
+# Dépendances optionnelles mais recommandées
+# Pour de meilleures performances avec ChromaDB
+# sqlite-vss>=0.1.2
+
+# Pour le support des types (optionnel)
+#typing-extensions>=4.0.0
+
+# Autres dépendances courantes pour RAG
+#numpy>=1.24.0
+#pydantic>=2.0.0
