@@ -1,7 +1,16 @@
+python-dotenv
+
 langchain
 langchain-community
 langchain-core
 langchain-ollama
 
+langchain-groq
+langchain-openai
+
 chromadb
 PyPDF2
+
+langgraph
+langgraph-prebuilt
+requests
