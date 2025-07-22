@@ -109,7 +109,7 @@ class SfRagEngine :
         """
         Charge un fichier PDF, en extrait le texte et le découpe en morceaux (chunks).
         Taille de chunk recommanndée: 500 à 1000 tokens
-        Chevauhement recommandé: 50 à 200 tokens
+        Chevauchement recommandé: 50 à 200 tokens
         """
         print(f"Chargement du fichier : {file_path}")
         reader = PdfReader(file_path)
